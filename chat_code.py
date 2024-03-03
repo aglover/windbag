@@ -8,18 +8,18 @@ from langchain.prompts import PromptTemplate
 from langchain.vectorstores.utils import filter_complex_metadata
 from langchain_community.document_loaders.generic import GenericLoader
 from langchain_community.document_loaders.parsers import LanguageParser
+from langchain_text_splitters import Language
 
 class ChatCode:
     chain = None
 
     def __init__(self):
         self.model = ChatOllama(model="codellama")
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=100)
         self.prompt = PromptTemplate.from_template(
             """
-            <s> [INST] You are an expert developer for question-answering tasks. Use the following pieces of retrieved context 
+            <s> [INST] You are an expert programmer for question-answering tasks. Use the following pieces of retrieved context 
             to answer the question. If you don't know the answer, just say that you don't know. Use three sentences
-             maximum and keep the answer concise. [/INST] </s> 
+            maximum and keep the answer concise. [/INST] </s> 
             [INST] Question: {question} 
             Context: {context} 
             Answer: [/INST]
@@ -27,16 +27,18 @@ class ChatCode:
         )
 
     def ingest(self, path: str):
-
+        
         loader = GenericLoader.from_filesystem(
             path,
             glob="**/[!.]*",
-            suffixes=[".rb", ".js"],
+            suffixes=[".rb"],
             parser=LanguageParser(),
         )
 
-        docs = loader.load()
-        chunks = self.text_splitter.split_documents(docs)
+        text_splitter = RecursiveCharacterTextSplitter.from_language(
+            language=Language.RUBY, chunk_size=1024, chunk_overlap=100)
+
+        chunks = text_splitter.split_documents(loader.load())
         chunks = filter_complex_metadata(chunks)
 
         vector_store = Chroma.from_documents(documents=chunks, embedding=FastEmbedEmbeddings())
