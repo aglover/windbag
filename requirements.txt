@@ -1,0 +1,4 @@
+langchain==0.1.10
+langchain_community==0.0.25
+streamlit==1.31.1
+streamlit_chat==0.1.1
